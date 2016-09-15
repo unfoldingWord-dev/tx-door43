@@ -1,0 +1,9 @@
+
+{
+  "name": "tx-door43",
+  "description": "Functions to manage the door43.org bucket"
+  "memory": 512,
+  "timeout": 300,
+  "role": "arn:aws:iam::581647696645:role/tx_lambda_function",
+  "environment": {}
+}
