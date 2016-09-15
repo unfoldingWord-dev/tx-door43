@@ -1,0 +1,3 @@
+requests
+boto3
+git+git://github.com/unfoldingWord-dev/obs-door43.git@develop#egg=obs_door43
