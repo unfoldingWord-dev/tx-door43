@@ -1,3 +1,4 @@
 requests
 boto3
 git+git://github.com/unfoldingWord-dev/obs-door43.git@develop#egg=obs_door43
+git+git://github.com/richmahn/tx-shared-tools.git@develop#egg=tx-shared-tools
