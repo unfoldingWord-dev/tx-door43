@@ -22,7 +22,7 @@ def deploy_to_door43(job):
     obs_template_url = 'https://dev.door43.org/templates/obs.html'
 
     # merge the source files with the template
-    with OBSDoor43(source_location_url, output_directory, obs_template_url, False) as merger:
+    with OBSD`oor43(source_location_url, output_directory, obs_template_url, False) as merger:
         merger.run()
 
     s3_resource = boto3.resource('s3')
@@ -43,41 +43,54 @@ def deploy_to_door43(job):
     s3_resource.Object(job['door43_bucket'], 'build_log.json').copy_from(CopySource='{0}/u/{1}/build_log.json'.format(job['cdn_bucket'], job['identifier']))
     return True
 
+def download_dir(client, resource, dist, local='/tmp', bucket='your_bucket'):
+    paginator = client.get_paginator('list_objects')
+    for result in paginator.paginate(Bucket=bucket, Delimiter='/', Prefix=dist):
+        if result.get('CommonPrefixes') is not None:
+            for subdir in result.get('CommonPrefixes'):
+                download_dir(client, resource, subdir.get('Prefix'), local, bucket)
+        if result.get('Contents') is not None:
+            for file in result.get('Contents'):
+                if not os.path.exists(os.path.dirname(local + os.sep + file.get('Key'))):
+                    os.makedirs(os.path.dirname(local + os.sep + file.get('Key')))
+                resource.meta.client.download_file(bucket, file.get('Key'), local + os.sep + file.get('Key'))
+
+def deploy_project(from_bucket, to_bucket, key):
+    client = boto3.client('s3')
+    resource = boto3.resource('s3')
+
+    tmpdir = tempfile.mkdtemp(prefix=from_bucket)
+    download_dir(client, resource, key, tmpdir, from_bucket)
+
+    
+    return True
+
+
+def redeploy_all_projects(from_bucket, to_bucket):
+    return True
+
 
 def handle(event, context):
-    deployed = 0
+    success = False
     if 'Records' in event:
         for record in event['Records']:
-            if record['eventName'] == 'MODIFY' and 'job_id' in record['dynamodb']['Keys']:
-                print("DynamoDB Record: " + json.dumps(record['dynamodb'], indent=2))
-                job_id = record['dynamodb']['Keys']['job_id']['S']
-                print("job_id: {}".format(job_id))
-                job_table = boto3.resource('dynamodb').Table('tx-job')
-                response = job_table.get_item(
-                    Key={
-                        'job_id': job_id
-                    }
-                )
-                if 'Item' in response:
-                    job = response['Item']
-                    print("JOB:")
-                    print(job)
-                    if 'success' in job and job['success'] and ('deployed' not in job or not job['deployed']):
-                        success = deploy_to_door43(job)
-                        if success:
-                            deployed_at_timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-                            job_table.update_item(
-                                Key={
-                                   'job_id': job['job_id'],
-                                },
-                                UpdateExpression="set deployed_at = :deployed_at, deployed = :deployed",
-                                ExpressionAttributeValues={
-                                    ':deployed_at': deployed_at_timestamp,
-                                    ':deployed': True
-                                }
-                            )
-                            deployed += 1
+            # See if it is a notification from an S3 bucket
+            if "s3" in record:
+                bucket = record['s3']['bucket']['name']
+                key = record['s3']['object']['key']
+
+                cdn_bucket = 'cdn.door43.org'
+                door43_bucket = 'door43.org'
+                if bucket.startswith('test-'):
+                    cdn_bucket = 'test-'+cdn_bucket
+                    door43_bucket = 'test-'+door43_bucket
+
+                # if the key ends with a .html, it was a change in template, and so all projects need to be redeployed
+                if bucket == door43_bucket and key.endswith('.html'):
+                    success = redeploy_all_projects(cdn_bucket, door43_bucket)
+                # else if it ends with build_log.json it was a change in the CDN and thus only that project needs to be generated
+                elif bucket.endswith('cdn.door43.org') and key.endswith("build_log.json"):
+                    sucess = deploy_project(cdn_bucket, door43_bucket, os.path.dirname(key))
         return {
-            'success': True,
-            'message': 'Successfully deployed {} job(s).'.format(deployed)
+            'success': success,
         }
