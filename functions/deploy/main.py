@@ -11,7 +11,8 @@ import json
 from datetime import datetime
 from mimetypes import MimeTypes
 from obs_door43.obs_door43 import OBSDoor43
-
+from general_tools.url_utils import get_url
+from general_tools.file_utils import write_file
 
 def deploy_to_door43(job):
     # location of output files that have been converted
@@ -41,13 +42,35 @@ def deploy_to_door43(job):
             if not mime_type:
                 mime_type = "text/{0}".format(os.path.splitext(path)[1])
             print('Uploading {0} to {1}, mime_type: {2}'.format(f, key, mime_type))
-            bucket.upload_file(path, key, ExtraArgs={'ContentType': mime_type})
+            bucket.upload_file(path, key, ExtraArgs={'ContentType': mime_type, 'CacheControl': str('public, max-age=5')})
 
     try:
         s3_resource.Object(job['door43_bucket'], '{0}/build_log.json'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/build_log.json'.format(job['cdn_bucket'], s3_commit_key))
         s3_resource.Object(job['door43_bucket'], '{0}/project.json'.format(s3_project_key)).copy_from(CopySource='{0}/{1}/project.json'.format(job['cdn_bucket'], s3_project_key))
         s3_resource.Object(job['door43_bucket'], '{0}/manifest.json'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/manifest.json'.format(job['cdn_bucket'], s3_commit_key))
         s3_resource.Object(job['door43_bucket'], '{0}/manifest.json'.format(s3_project_key)).copy_from(CopySource='{0}/{1}/manifest.json'.format(job['cdn_bucket'], s3_commit_key))
+
+        # Download the project.json and generate temp index.html page
+        try:
+            s3_repo_key = 'u/{0}/{1}'.format(user, repo)
+            project_url = '{0}/{1}/project.json'.format(job['cdn_url'], s3_repo_key)
+            print("Getting {0}...".format(project_url))
+            project = json.loads(get_url(project_url))
+            print("GOT:")
+            print(project)
+            html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo)
+            for commit in project['commits']:
+                html += '<li><a href="{0}/01.html">{0}</a> - {1}</li>'.format(commit['id'], commit['created_at'])
+            html += '</ul></body></html>'
+            repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
+            write_file(repo_index_file, html)
+            bucket.upload_file(repo_index_file, s3_repo_key + '/index.html',
+                               ExtraArgs={'ContentType': 'text/html', 'CacheControl': str('public, max-age=5')})
+        except Exception as e:
+            print("FAILED: {0}".format(e.message))
+        finally:
+            print('finished.')
+
     except Exception:
         pass
 
