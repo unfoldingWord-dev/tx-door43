@@ -42,7 +42,7 @@ def deploy_to_door43(job):
             if not mime_type:
                 mime_type = "text/{0}".format(os.path.splitext(path)[1])
             print('Uploading {0} to {1}, mime_type: {2}'.format(f, key, mime_type))
-            bucket.upload_file(path, key, ExtraArgs={'ContentType': mime_type, 'CacheControl': str('public, max-age=5')})
+            bucket.upload_file(path, key, ExtraArgs={'ContentType': mime_type, 'CacheControl': 'max-age=0'})
 
     try:
         s3_resource.Object(job['door43_bucket'], '{0}/build_log.json'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/build_log.json'.format(job['cdn_bucket'], s3_commit_key))
@@ -65,7 +65,7 @@ def deploy_to_door43(job):
             repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
             write_file(repo_index_file, html)
             bucket.upload_file(repo_index_file, s3_repo_key + '/index.html',
-                               ExtraArgs={'ContentType': 'text/html', 'CacheControl': str('public, max-age=5')})
+                               ExtraArgs={'ContentType': 'text/html', 'CacheControl': 'max-age=0'})
         except Exception as e:
             print("FAILED: {0}".format(e.message))
         finally:
