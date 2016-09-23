@@ -20,7 +20,7 @@ def deploy_to_door43(job):
     # where the files should be written after being merged into the template - /tmp/obs
     output_directory = os.path.join(tempfile.gettempdir(), 'obs')
     # the url of the obs template
-    obs_template_url = 'https://s3-us-west-2.amazonaws.com/test-door43.org/templates/obs-rich.html'
+    obs_template_url = 'https://dev.door43.org/templates/obs-rich.html'
 
     user, repo, commit = job['identifier'].split('/') # identifier = user/repo/commit
 
