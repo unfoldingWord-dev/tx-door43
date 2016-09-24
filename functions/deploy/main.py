@@ -45,6 +45,7 @@ def deploy_to_door43(job):
             bucket.upload_file(path, key, ExtraArgs={'ContentType': mime_type, 'CacheControl': 'max-age=0'})
 
     try:
+        s3_resource.Object(job['door43_bucket'], '{0}/index.html'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/01.html'.format(job['door43_bucket'], s3_commit_key))
         s3_resource.Object(job['door43_bucket'], '{0}/build_log.json'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/build_log.json'.format(job['cdn_bucket'], s3_commit_key))
         s3_resource.Object(job['door43_bucket'], '{0}/project.json'.format(s3_project_key)).copy_from(CopySource='{0}/{1}/project.json'.format(job['cdn_bucket'], s3_project_key))
         s3_resource.Object(job['door43_bucket'], '{0}/manifest.json'.format(s3_commit_key)).copy_from(CopySource='{0}/{1}/manifest.json'.format(job['cdn_bucket'], s3_commit_key))
