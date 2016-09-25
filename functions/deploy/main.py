@@ -20,7 +20,7 @@ def deploy_to_door43(job):
     # where the files should be written after being merged into the template - /tmp/obs
     output_directory = os.path.join(tempfile.gettempdir(), 'obs')
     # the url of the obs template
-    obs_template_url = 'https://dev.door43.org/templates/obs-rich.html'
+    obs_template_url = 'https://dev.door43.org/templates/obs.html'
 
     user, repo, commit = job['identifier'].split('/') # identifier = user/repo/commit
 
@@ -79,12 +79,14 @@ def deploy_to_door43(job):
 
 
 def redeploy_all_projects(from_bucket, to_bucket):
+    # Todo: Template changed, so we need to redeploy all commit pages
     return True
 
 
 def handle(event, context):
     success = False
 
+    # If we got 'Records' that means a template change was upoaded to S3 and we got the trigger
     if 'Records' in event:
         for record in event['Records']:
             # See if it is a notification from an S3 bucket
@@ -99,8 +101,12 @@ def handle(event, context):
                         cdn_bucket = 'test-'+cdn_bucket
                         door43_bucket = 'test-'+door43_bucket
                         success = redeploy_all_projects(cdn_bucket, door43_bucket)
+    # Else this function was called with 'data' to deploy a single commit
     elif 'data' in event:
         data = event['data']
+        if 'vars' in event and isinstance(event['vars'], dict):
+            data.update(event['vars'])
+
         if 'vars' in event and isinstance(event['vars'], dict):
             data.update(event['vars'])
         success = deploy_to_door43(event['data'])
