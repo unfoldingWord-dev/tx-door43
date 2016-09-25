@@ -7,26 +7,44 @@ import boto3
 import tempfile
 import os
 import json
+import templaters
 
 from datetime import datetime
 from mimetypes import MimeTypes
 from obs_door43.obs_door43 import OBSDoor43
 from general_tools.url_utils import get_url
 from general_tools.file_utils import write_file
+from aws_tools.s3_handler import S3Handler
+
+
+def str_to_class(str):
+    return reduce(getattr, str.split("."), sys.modules[__name__])
+
 
 def deploy_to_door43(job):
-    # location of output files that have been converted
-    source_location_url = 'https://{0}/u/{1}'.format(job['cdn_bucket'], job['identifier'])
-    # where the files should be written after being merged into the template - /tmp/obs
-    output_directory = os.path.join(tempfile.gettempdir(), 'obs')
-    # the url of the obs template
-    obs_template_url = 'https://dev.door43.org/templates/obs.html'
+    source_dir = tempfile.mkdtemp(prefix='source_')
+    output_dir = tempfile.mkdtemp(previs='output_')
+    template_dir = tempfile.mkdtemp(previs='template_')
 
-    user, repo, commit = job['identifier'].split('/') # identifier = user/repo/commit
+    s3 = S3Handler()
+    s3.download_dir(job['cdn_bucket'], job['identifier'], source_dir)
+
+    # determining the template and templater from the resource_type, use general if not found
+    try:
+        templater_class = str_to_class('templaters.{0}'.format(job['resource_type'].capitalize()))
+        template_url = '{0}/templates/{1}.html'.format(job['door43_ur'], job['resource_type'])
+    except AttributeError:
+        templater_class = templaters.Templater
+        template_url = '{0}/templates/{1}.html'.format(job['door43_ur'], 'template')
+
+    template_file = os.path.join(template_dir, 'template.html')
+    write_file(template_file, get_url(template_url))
 
     # merge the source files with the template
-    with OBSDoor43(source_location_url, output_directory, obs_template_url, False) as merger:
-        merger.run()
+    with templater_class(source_dir, output_dir, template_file, False) as templater:
+        templater.run()
+
+    user, repo, commit = job['identifier'].split('/')  # identifier = user/repo/commit
 
     s3_resource = boto3.resource('s3')
     bucket = s3_resource.Bucket(job['door43_bucket'])
