@@ -81,6 +81,7 @@ def deploy_to_door43(job):
             project = json.loads(get_url(project_url))
             print("GOT:")
             print(project)
+
             html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo)
             for commit in project['commits']:
                 html += '<li><a href="{0}/01.html">{0}</a> - {1}</li>'.format(commit['id'], commit['created_at'])
