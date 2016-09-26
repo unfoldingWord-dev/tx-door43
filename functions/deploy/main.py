@@ -3,15 +3,17 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import boto3
-import tempfile
 import os
+import sys
+import tempfile
 import json
+import boto3
+
 import templaters
 
 from datetime import datetime
 from mimetypes import MimeTypes
-from obs_door43.obs_door43 import OBSDoor43
+
 from general_tools.url_utils import get_url
 from general_tools.file_utils import write_file
 from aws_tools.s3_handler import S3Handler
@@ -23,26 +25,28 @@ def str_to_class(str):
 
 def deploy_to_door43(job):
     source_dir = tempfile.mkdtemp(prefix='source_')
-    output_dir = tempfile.mkdtemp(previs='output_')
-    template_dir = tempfile.mkdtemp(previs='template_')
+    output_dir = tempfile.mkdtemp(prefix='output_')
+    template_dir = tempfile.mkdtemp(prefix='template_')
 
     s3 = S3Handler()
-    s3.download_dir(job['cdn_bucket'], job['identifier'], source_dir)
+    s3.download_dir(job['cdn_bucket'], 'u/'+job['identifier'], source_dir)
+    source_dir = os.path.join(source_dir, 'u/'+job['identifier'])
 
     # determining the template and templater from the resource_type, use general if not found
     try:
-        templater_class = str_to_class('templaters.{0}'.format(job['resource_type'].capitalize()))
-        template_url = '{0}/templates/{1}.html'.format(job['door43_ur'], job['resource_type'])
+        templater_class = str_to_class('templaters.{0}Templater'.format(job['resource_type'].capitalize()))
+        template_url = '{0}/templates/{1}.html'.format(job['door43_url'], job['resource_type'])
     except AttributeError:
         templater_class = templaters.Templater
-        template_url = '{0}/templates/{1}.html'.format(job['door43_ur'], 'template')
+        template_url = '{0}/templates/{1}.html'.format(job['door43_url'], 'obs')
 
     template_file = os.path.join(template_dir, 'template.html')
+    print("Downloading {0}...".format(template_url))
     write_file(template_file, get_url(template_url))
 
     # merge the source files with the template
-    with templater_class(source_dir, output_dir, template_file, False) as templater:
-        templater.run()
+    templater = templater_class(source_dir, output_dir, template_file)
+    templater.run()
 
     user, repo, commit = job['identifier'].split('/')  # identifier = user/repo/commit
 
@@ -52,10 +56,10 @@ def deploy_to_door43(job):
     s3_project_key = 'u/{0}/{1}'.format(user, repo)
 
     mime = MimeTypes()
-    for root, dirs, files in os.walk(output_directory):
+    for root, dirs, files in os.walk(output_dir):
         for f in sorted(files):
             path = os.path.join(root, f)
-            key = s3_commit_key + path.replace(output_directory, '')
+            key = s3_commit_key + path.replace(output_dir, '')
             mime_type = mime.guess_type(path)[0]
             if not mime_type:
                 mime_type = "text/{0}".format(os.path.splitext(path)[1])
