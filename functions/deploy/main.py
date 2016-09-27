@@ -115,19 +115,23 @@ def handle(event, context):
             print(record)
             # See if it is a notification from an S3 bucket
             if 's3' in record:
-                bucket = record['s3']['bucket']['name']
+                bucket_name = record['s3']['bucket']['name']
                 key = record['s3']['object']['key']
+                print(bucket_name, key)
 
                 cdn_bucket = 'cdn.door43.org'
                 door43_bucket = 'door43.org'
-                if bucket.startswith('test-'):
+                if bucket_name.startswith('test-'):
                     cdn_bucket = 'test-'+door43_bucket
                     door43_bucket = 'test-'+door43_bucket
+                print(cdn_bucket, door43_bucket)
 
                 # if the key ends with a .html, it was a change in template, and so all projects need to be redeployed
                 if key.endswith('.html'):
+                    print('.html')
                     success = Door43Deployer(cdn_bucket, door43_bucket).redeploy_all_commits()
                 elif key.endswith('build_log.json'):
+                    print('.json')
                     success = Door43Deployer(cdn_bucket, door43_bucket).deploy_commit_to_door43(key)
 
     return {
