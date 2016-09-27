@@ -61,7 +61,7 @@ class Door43Deployer(object):
 
         template_file = os.path.join(template_dir, 'template.html')
         print("Downloading {0} to {1}...".format(template_key, template_file))
-        self.door43_handler.download_file(template_key, template_dir)
+        self.door43_handler.download_file(template_key, template_file)
 
         # merge the source files with the template
         templater = templater_class(source_dir, output_dir, template_file)
