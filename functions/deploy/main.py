@@ -25,17 +25,16 @@ class Door43Deployer(object):
         self.cdn_handler = S3Handler(cdn_bucket)
         self.door43_handler = S3Handler(door43_bucket)
 
-    def deploy_commit_to_door43(self, build_json_key):
+    def deploy_commit_to_door43(self, build_log_key):
         build_log = None
-
         try:
-            build_log = self.cdn_handler.get_json(build_json_key)
+            build_log = self.cdn_handler.get_json(build_log_key)
         except:
             pass
 
         print(build_log)
 
-        if not build_log or 'commit_id' not in build_log or 'repo_owner' not in buid_log or 'repo_name' not in build_log:
+        if not build_log or 'commit_id' not in build_log or 'repo_owner' not in build_log or 'repo_name' not in build_log:
             return False
 
         user = build_log['repo_owner']
