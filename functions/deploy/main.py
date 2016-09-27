@@ -54,15 +54,14 @@ class Door43Deployer(object):
         # determining the template and templater from the resource_type, use general if not found
         try:
             templater_class = str_to_class('templaters.{0}Templater'.format(build_log['resource_type'].capitalize()))
-            template_url = 'https://s3-us-west-2.amazon.com/{0}/templates/{1}.html'.format(door43_bucket,
-                                                                                           build_log['resource_type'])
+            template_key = 'templates/{1}.html'.format(build_log['resource_type'])
         except AttributeError:
             templater_class = templaters.Templater
-            template_url = 'https://s3-us-west-2.amazon.com/{0}/templates/{1}.html'.format(door43_bucket, 'obs')
+            template_key = 'templates/{1}.html'.format('obs')
 
         template_file = os.path.join(template_dir, 'template.html')
-        print("Downloading {0}...".format(template_url))
-        write_file(template_file, get_url(template_url))
+        print("Downloading {0} to {1}...".format(template_key, template_file))
+        self.door43_handler.download_file(template_key, template_dir)
 
         # merge the source files with the template
         templater = templater_class(source_dir, output_dir, template_file)
