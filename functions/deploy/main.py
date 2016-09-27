@@ -26,7 +26,12 @@ class Door43Deployer(object):
         self.door43_handler = S3Handler(door43_bucket)
 
     def deploy_commit_to_door43(self, build_json_key):
-        build_log = cdn_handler.get_json(build_json_key)
+        build_log = None
+
+        try:
+            build_log = self.cdn_handler.get_json(build_json_key)
+        except:
+            pass
 
         if not build_log or 'commit_id' not in build_log:
             return False
@@ -35,7 +40,7 @@ class Door43Deployer(object):
         output_dir = tempfile.mkdtemp(prefix='output_')
         template_dir = tempfile.mkdtemp(prefix='template_')
 
-        cdn_handler.download_dir(dir, source_dir)
+        self.cdn_handler.download_dir(dir, source_dir)
         source_dir = os.path.join(source_dir, dir)
 
         # determining the template and templater from the resource_type, use general if not found
