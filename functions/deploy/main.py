@@ -112,6 +112,7 @@ def handle(event, context):
     # If we got 'Records' that means a template change was upoaded to S3 and we got the trigger
     if 'Records' in event:
         for record in event['Records']:
+            print(record)
             # See if it is a notification from an S3 bucket
             if 's3' in record:
                 bucket = record['s3']['bucket']['name']
