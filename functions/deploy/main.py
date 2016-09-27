@@ -35,15 +35,22 @@ class Door43Deployer(object):
 
         print(build_log)
 
-        if not build_log or 'commit_id' not in build_log:
+        if not build_log or 'commit_id' not in build_log or 'repo_owner' not in buid_log or 'repo_name' not in build_log:
             return False
+
+        user = build_log['repo_owner']
+        repo_name = build_log['repo_name']
+        commit_id = build_log['commit_id'][:10]
+
+        s3_commit_key = 'u/{0}/{1}/{2}'.format(user, repo_name, commit_id)
+        s3_project_key = 'u/{0}/{1}'.format(user, repo_name)
 
         source_dir = tempfile.mkdtemp(prefix='source_')
         output_dir = tempfile.mkdtemp(prefix='output_')
         template_dir = tempfile.mkdtemp(prefix='template_')
 
-        self.cdn_handler.download_dir(dir, source_dir)
-        source_dir = os.path.join(source_dir, dir)
+        self.cdn_handler.download_dir(s3_commit_key, source_dir)
+        source_dir = os.path.join(source_dir, s3_commit_key)
 
         # determining the template and templater from the resource_type, use general if not found
         try:
@@ -62,13 +69,6 @@ class Door43Deployer(object):
         templater = templater_class(source_dir, output_dir, template_file)
         templater.run()
 
-        user = build_log['repo_owner']
-        repo = build_log['repo_name']
-        commit = build_log['commit_id'][:10]
-
-        s3_commit_key = 'u/{0}/{1}/{2}'.format(user, repo, commit)
-        s3_project_key = 'u/{0}/{1}'.format(user, repo)
-
         door43_handler.copy(from_key, to_key, from_bucket=None, to_bucket=None)
 
         # Now we place json files and make an html file
@@ -81,13 +81,13 @@ class Door43Deployer(object):
 
             # Download the project.json and generate repo's index.html page
             try:
-                project_json_key = '{0}/{1}/{2}/project.json'.format(build_log['cdn_url'], user, repo)
+                project_json_key = '{0}/{1}/{2}/project.json'.format(build_log['cdn_url'], user, repo_name)
                 print("Getting {0}...".format(project_json_key))
                 project_json = self.cdn_handler.get_json(project_json_key)
 
-                html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo)
-                for commit in project_json['commits']:
-                    html += '<li><a href="{0}/01.html">{0}</a> - {1}</li>'.format(commit['id'], commit['created_at'])
+                html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo_name)
+                for commit_id in project_json['commits']:
+                    html += '<li><a href="{0}/01.html">{0}</a> - {1}</li>'.format(commit_id['id'], commit_id['created_at'])
                 html += '</ul></body></html>'
                 repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
                 write_file(repo_index_file, html)
