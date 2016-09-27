@@ -33,6 +33,8 @@ class Door43Deployer(object):
         except:
             pass
 
+        print(build_log)
+
         if not build_log or 'commit_id' not in build_log:
             return False
 
@@ -122,7 +124,7 @@ def handle(event, context):
                 cdn_bucket = 'cdn.door43.org'
                 door43_bucket = 'door43.org'
                 if bucket_name.startswith('test-'):
-                    cdn_bucket = 'test-'+door43_bucket
+                    cdn_bucket = 'test-'+cdn_bucket
                     door43_bucket = 'test-'+door43_bucket
                 print(cdn_bucket, door43_bucket)
 
