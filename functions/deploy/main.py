@@ -6,13 +6,8 @@ from __future__ import unicode_literals
 import os
 import sys
 import tempfile
-import json
-import boto3
 
 import templaters
-
-from datetime import datetime
-from mimetypes import MimeTypes
 
 from general_tools.url_utils import get_url
 from general_tools.file_utils import write_file

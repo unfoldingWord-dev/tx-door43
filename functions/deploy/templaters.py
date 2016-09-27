@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import codecs
+
 import os
 import json
 import shutil
@@ -11,8 +11,7 @@ from glob import glob
 
 from bs4 import BeautifulSoup
 
-from general_tools.file_utils import write_file, load_json_object
-from general_tools.url_utils import join_url_parts, get_url
+from general_tools.file_utils import write_file
 
 
 class Templater(object):
