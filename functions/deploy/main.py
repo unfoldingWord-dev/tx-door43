@@ -54,10 +54,10 @@ class Door43Deployer(object):
         # determining the template and templater from the resource_type, use general if not found
         try:
             templater_class = str_to_class('templaters.{0}Templater'.format(build_log['resource_type'].capitalize()))
-            template_key = 'templates/{1}.html'.format(build_log['resource_type'])
+            template_key = 'templates/{0}.html'.format(build_log['resource_type'])
         except AttributeError:
             templater_class = templaters.Templater
-            template_key = 'templates/{1}.html'.format('obs')
+            template_key = 'templates/{0}.html'.format('obs')
 
         template_file = os.path.join(template_dir, 'template.html')
         print("Downloading {0} to {1}...".format(template_key, template_file))
