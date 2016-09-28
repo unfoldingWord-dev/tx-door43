@@ -71,7 +71,7 @@ class Templater(object):
             language_code = self.manifest['target_language']['id']
             language_name = self.manifest['target_language']['name']
         elif 'language' in self.manifest:
-            language_code = self.manifest['language']['id']
+            language_code = self.manifest['language']['slug']
             language_name = self.manifest['language']['name']
         elif 'repo_name' in self.build_log:
             repo_name = self.build_log['repo_name']
