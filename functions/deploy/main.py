@@ -101,10 +101,19 @@ class Door43Deployer(object):
                 print("Getting {0}...".format(project_json_key))
                 project_json = self.cdn_handler.get_json(project_json_key)
 
-                html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo_name)
-                for commit_id in project_json['commits']:
-                    html += '<li><a href="{0}/index.html">{0}</a> - {1}</li>'.format(commit_id['id'], commit_id['created_at'])
-                html += '</ul></body></html>'
+                html = '<html>' \
+                       '    <head>' \
+                       '        <meta http-equiv="refresh" content="0; URL=\'{0}\'" />' \
+                       '        <title>{1}</title>' \
+                       '    </head>' \
+                       '    <body>' \
+                       '        <h1>{1}</h1>' \
+                       '        <ul>'.format(project_json['commits'][(len(project_json['commits'])-1)]['id'], repo_name)
+                for commit in project_json['commits']:
+                    html += '<li><a href="{0}/index.html">{0}</a> - {1}</li>'.format(commit['id'], commit['created_at'])
+                html += '       </ul>' \
+                        '   </body>' \
+                        '</html>'
                 repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
                 write_file(repo_index_file, html)
                 self.door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
