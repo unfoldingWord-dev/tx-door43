@@ -107,13 +107,10 @@ class Door43Deployer(object):
                        '        <title>{1}</title>' \
                        '    </head>' \
                        '    <body>' \
-                       '        <h1>{1}</h1>' \
-                       '        <ul>'.format(project_json['commits'][(len(project_json['commits'])-1)]['id'], repo_name)
-                for commit in project_json['commits']:
-                    html += '<li><a href="{0}/index.html">{0}</a> - {1}</li>'.format(commit['id'], commit['created_at'])
-                html += '       </ul>' \
-                        '   </body>' \
-                        '</html>'
+                       '        <h1><a href="{0}">{1}</a></h1>' \
+                       '   </body>' \
+                       '</html>'.format(project_json['commits'][(len(project_json['commits'])-1)]['id'], repo_name)
+
                 repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
                 write_file(repo_index_file, html)
                 self.door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
