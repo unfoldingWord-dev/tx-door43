@@ -23,16 +23,26 @@ class Templater(object):
 
         self.files = sorted(glob(os.path.join(self.source_dir, '*.html')))
         self.manifest = {}
+        self.build_log = {}
         self.template_html = ''
 
     def run(self):
         print(glob(os.path.join(self.source_dir, '*')))
 
         # get manifest.json
-        with open(os.path.join(self.source_dir, 'manifest.json')) as manifest_file:
-            self.manifest = json.load(manifest_file)
+        manifest_filename = os.path.join(self.source_dir, 'manifest.json')
+        if os.path.isfile(manifest_filename):
+            with open(manifest_filename) as manifest_file:
+                self.manifest = json.load(manifest_file)
+
+        # get manifest.json
+        build_log_filename = os.path.join(self.source_dir, 'build_log.json')
+        if os.path.isfile(build_log_filename):
+            with open(build_log_filename) as build_log_file:
+                self.build_log = json.load(build_log_file)
 
         print(self.manifest)
+        print(self.build_log)
 
         with open(self.template_file) as template_file:
             self.template_html = template_file.read()
@@ -53,8 +63,29 @@ class Templater(object):
         return html
 
     def apply_template(self):
-        language_code = self.manifest['language']['slug']
-        heading = '{0}: {1}'.format(self.manifest['language']['name'], self.manifest['name'])
+        language_code = ''
+        language_name = ''
+        name = ''
+
+        if 'target_language' in self.manifest:
+            language_code = self.manifest['target_language']['id']
+            language_name = self.manifest['target_language']['name']
+        elif 'language' in self.manifest:
+            language_code = self.manifest['language']['id']
+            language_name = self.manifest['language']['name']
+        elif 'repo_name' in self.build_log:
+            repo_name = self.build_log['repo_name']
+            if '_' in repo_name:
+                language_code = language_name = repo_name.split('_')[0]
+                name = repo_name.split('_')[1:]
+            elif '-' in repo_name:
+                language_code = language_name = repo_name.split('-')[0]
+                name = repo_name.split('_')[1:]
+
+        if 'name' in self.manifest:
+            name = self.manifest['name']
+
+        heading = '{0}: {1}'.format(language_name, name)
         title = ''
         canonical = ''
 

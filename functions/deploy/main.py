@@ -103,7 +103,7 @@ class Door43Deployer(object):
 
                 html = '<html><head><title>{0}</title></head><body><h1>{0}</h1><ul>'.format(repo_name)
                 for commit_id in project_json['commits']:
-                    html += '<li><a href="{0}/01.html">{0}</a> - {1}</li>'.format(commit_id['id'], commit_id['created_at'])
+                    html += '<li><a href="{0}/index.html">{0}</a> - {1}</li>'.format(commit_id['id'], commit_id['created_at'])
                 html += '</ul></body></html>'
                 repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
                 write_file(repo_index_file, html)
