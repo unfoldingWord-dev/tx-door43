@@ -32,6 +32,8 @@ class Templater(object):
         with open(os.path.join(self.source_dir, 'manifest.json')) as manifest_file:
             self.manifest = json.load(manifest_file)
 
+        print(self.manifest)
+
         with open(self.template_file) as template_file:
             self.template_html = template_file.read()
 
@@ -71,7 +73,7 @@ class Templater(object):
             left_sidebar_div.clear()
             left_sidebar_div.append(left_sidebar_soup.span)
 
-        # loop through the downloaded files
+        # loop through the html files
         for filename in self.files:
             if not self.quiet:
                 print('Applying template to {0}.'.format(filename))
@@ -127,10 +129,6 @@ class Templater(object):
                 print('Writing {0}.'.format(out_file))
 
             write_file(out_file, html.encode('ascii', 'xmlcharrefreplace'))
-
-        index_file = os.path.join(self.output_dir, 'index.html')
-        if not os.path.isfile(index_file):
-            copyfile(os.path.join(self.output_dir, self.files[0]), index_file)
 
 
 class ObsTemplater(Templater):

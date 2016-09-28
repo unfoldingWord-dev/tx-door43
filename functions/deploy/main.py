@@ -9,6 +9,8 @@ import tempfile
 
 import templaters
 
+from glob import glob
+from shutil import copyfile
 from general_tools.url_utils import get_url
 from general_tools.file_utils import write_file
 from aws_tools.s3_handler import S3Handler
@@ -42,7 +44,7 @@ class Door43Deployer(object):
         commit_id = build_log['commit_id'][:10]
 
         s3_commit_key = 'u/{0}/{1}/{2}'.format(user, repo_name, commit_id)
-        s3_project_key = 'u/{0}/{1}'.format(user, repo_name)
+        s3_repo_key = 'u/{0}/{1}'.format(user, repo_name)
 
         source_dir = tempfile.mkdtemp(prefix='source_')
         output_dir = tempfile.mkdtemp(prefix='output_')
@@ -67,19 +69,35 @@ class Door43Deployer(object):
         templater = templater_class(source_dir, output_dir, template_file)
         templater.run()
 
-        door43_handler.copy(from_key, to_key, from_bucket=None, to_bucket=None)
+        # Copy first HTML file to index.html if index.html doesn't exist
+        html_files = sorted(glob(os.path.join(output_dir, '*.html')))
+        if len(html_files) > 0:
+            index_file = os.path.join(output_dir, 'index.html')
+            if not os.path.isfile(index_file):
+                copyfile(os.path.join(output_dir, html_files[0]), index_file)
 
-        # Now we place json files and make an html file
+        # Copy all other files over that don't already exist in output_dir, like css files
+        for filename in sorted(glob(os.path.join(source_dir, '*'))):
+            output_file = os.path.join(output_dir, os.path.basename(filename))
+            if not os.path.isfile(output_file):
+                copyfile(filename, output_file)
+
+        # Upload all files to the door43.org bucket
+        for root, dirs, files in os.walk(output_dir):
+            for f in sorted(files):
+                path = os.path.join(root, f)
+                key = s3_commit_key + path.replace(output_dir, '')
+                print("Uploading {0} to {1}".format(path, key))
+                self.door43_handler.upload_file(path, key)
+
+        # Now we place json files and make an index.html file for the whole repo
         try:
-            door43_handler.copy(from_key='{0}/build_log.json'.format(s3_commit_key), from_bucket=self.cdn_bucket)
-            door43_handler.copy(from_key='{0}/project.json'.format(s3_project_key), from_bucket=self.cdn_bucket)
-            door43_handler.copy(from_key='{0}/manifest.json'.format(s3_commit_key), from_bucket=self.cdn_bucket)
-            door43_handler.copy(from_key='{0}/manifest.json'.format(s3_commit_key), from_bucket=self.cdn_bucket,
-                                to_key='{0}/manifest.json'.format(s3_project_key))
+            self.door43_handler.copy(from_key='{0}/project.json'.format(s3_repo_key), from_bucket=self.cdn_bucket)
+            self.door43_handler.copy(from_key='{0}/manifest.json'.format(s3_commit_key), to_key='{0}/manifest.json'.format(s3_repo_key))
 
             # Download the project.json and generate repo's index.html page
             try:
-                project_json_key = '{0}/{1}/{2}/project.json'.format(build_log['cdn_url'], user, repo_name)
+                project_json_key = 'u/{0}/{1}/project.json'.format(user, repo_name)
                 print("Getting {0}...".format(project_json_key))
                 project_json = self.cdn_handler.get_json(project_json_key)
 
@@ -89,7 +107,7 @@ class Door43Deployer(object):
                 html += '</ul></body></html>'
                 repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
                 write_file(repo_index_file, html)
-                door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
+                self.door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
             except Exception as e:
                 print("FAILED: {0}".format(e.message))
             finally:
