@@ -2,15 +2,10 @@ from __future__ import unicode_literals, print_function
 
 import os
 import json
-import shutil
-import tempfile
 import codecs
 
-from shutil import copyfile
 from glob import glob
-
 from bs4 import BeautifulSoup
-
 from general_tools.file_utils import write_file
 
 
