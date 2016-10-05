@@ -2,21 +2,23 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-
 import os
 import sys
 import tempfile
 
-import templaters
-
 from glob import glob
 from shutil import copyfile
-from general_tools.url_utils import get_url
-from general_tools.file_utils import write_file
 from aws_tools.s3_handler import S3Handler
+from general_tools.file_utils import write_file
+from general_tools.url_utils import get_url
+from door43_tools import templaters
 
 
 def str_to_class(str):
+    """
+    Gets a class from a string.
+    :param str|unicode str: The string of the class name
+    """
     return reduce(getattr, str.split("."), sys.modules[__name__])
 
 
