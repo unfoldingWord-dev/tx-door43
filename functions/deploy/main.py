@@ -67,6 +67,20 @@ class Door43Deployer(object):
         print("Downloading {0} to {1}...".format(template_key, template_file))
         self.door43_handler.download_file(template_key, template_file)
 
+        html_files = sorted(glob(os.path.join(source_dir, '*.html')))
+        if len(html_files) < 1:
+            html = '<html>' \
+                   '    <head>' \
+                   '        <meta http-equiv="refresh" content="0; URL=\'{0}\'" />' \
+                   '        <title>{0}</title>' \
+                   '    </head>' \
+                   '    <body>' \
+                   '        <div id="content">No content is available to show for {0} yet.</div>' \
+                   '   </body>' \
+                   '</html>'.format(repo_name)
+            repo_index_file = os.path.join(source_dir, 'index.html')
+            write_file(repo_index_file, html)
+
         # merge the source files with the template
         templater = templater_class(source_dir, output_dir, template_file)
         templater.run()
