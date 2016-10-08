@@ -58,10 +58,13 @@ class Door43Deployer(object):
         # determining the template and templater from the resource_type, use general if not found
         try:
             templater_class = str_to_class('templaters.{0}Templater'.format(build_log['resource_type'].capitalize()))
-            template_key = 'templates/{0}.html'.format(build_log['resource_type'])
+            if build_log['resource_type']:
+                template_key = 'templates/{0}.html'.format(build_log['resource_type'])
+            else:
+                template_key = 'templates/obs.html'  # Use a generic template here
         except AttributeError:
             templater_class = templaters.Templater
-            template_key = 'templates/{0}.html'.format('obs')
+            template_key = 'templates/obs.html'  # Use a generic template here
 
         template_file = os.path.join(template_dir, 'template.html')
         print("Downloading {0} to {1}...".format(template_key, template_file))
@@ -95,13 +98,14 @@ class Door43Deployer(object):
                 content += u'<p><i>No content is available to show for {0} yet.</i></p>'.format(repo_name)
 
             html = u"""
-                <html>
+                <html lang="en">
                     <head>
-                        <title>{0}</title>' \
-                    </head>' \
-                    <body>' \
-                        <div id="content">{1}</div>' \
-                    </body>' \
+                        <title>{0}</title>'
+
+                    </head>
+                    <body>
+                        <div id="content">{1}</div>
+                    </body>
                 </html>""".format(repo_name, content)
             repo_index_file = os.path.join(source_dir, 'index.html')
             write_file(repo_index_file, html)
