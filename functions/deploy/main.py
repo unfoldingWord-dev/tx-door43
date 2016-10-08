@@ -69,15 +69,40 @@ class Door43Deployer(object):
 
         html_files = sorted(glob(os.path.join(source_dir, '*.html')))
         if len(html_files) < 1:
-            html = '<html>' \
-                   '    <head>' \
-                   '        <meta http-equiv="refresh" content="0; URL=\'{0}\'" />' \
-                   '        <title>{0}</title>' \
-                   '    </head>' \
-                   '    <body>' \
-                   '        <div id="content">No content is available to show for {0} yet.</div>' \
-                   '   </body>' \
-                   '</html>'.format(repo_name)
+            content = u''
+            if len(build_log['errors']) > 0:
+                content += u"""
+                    <div style="text-align:center;margin-bottom:20px">
+                        <i class="fa fa-times-circle-o" style="font-size: 250px;font-weight: 300;color: red"></i>
+                        <br/>
+                        <h2>Critical!</h2>
+                        <h3>Here is what went wrong with this build:</h3>
+                    </div>
+                """
+                content += u'<div><ul><li>' + u'</li><li>'.join(build_log['errors']) + u'</li></ul></div>'
+            elif len(build_log['warnings']) > 0:
+                content += u"""
+                    <div style="text-align:center;margin-bottom:20px">
+                        <i class="fa fa-exclamation-circle" style="font-size: 250px;font-weight: 300;color: yellow"></i>
+                        <br/>
+                        <h2>Warning!</h2>
+                        <h3>Here are some problems with this build:</h3>
+                    </div>
+                """
+                content += u'<ul><li>' + u'</li><li>'.join(build_log['warnings']) + u'</li></ul>'
+            else:
+                content += u'<h1>{0}</h1>'.format(build_log['message'])
+                content += u'<p><i>No content is available to show for {0} yet.</i></p>'.format(repo_name)
+
+            html = u"""
+                <html>
+                    <head>
+                        <title>{0}</title>' \
+                    </head>' \
+                    <body>' \
+                        <div id="content">{1}</div>' \
+                    </body>' \
+                </html>""".format(repo_name, content)
             repo_index_file = os.path.join(source_dir, 'index.html')
             write_file(repo_index_file, html)
 
@@ -104,35 +129,37 @@ class Door43Deployer(object):
                 path = os.path.join(root, f)
                 key = s3_commit_key + path.replace(output_dir, '')
                 print("Uploading {0} to {1}".format(path, key))
-                self.door43_handler.upload_file(path, key)
+                self.door43_handler.upload_file(path, key, 0)
 
         # Now we place json files and make an index.html file for the whole repo
         try:
             self.door43_handler.copy(from_key='{0}/project.json'.format(s3_repo_key), from_bucket=self.cdn_bucket)
             self.door43_handler.copy(from_key='{0}/manifest.json'.format(s3_commit_key), to_key='{0}/manifest.json'.format(s3_repo_key))
 
-            # Download the project.json and generate repo's index.html page
-            try:
-                project_json_key = 'u/{0}/{1}/project.json'.format(user, repo_name)
-                print("Getting {0}...".format(project_json_key))
-                project_json = self.cdn_handler.get_json(project_json_key)
-
-                html = '<html>' \
-                       '    <head>' \
-                       '        <meta http-equiv="refresh" content="0; URL=\'{0}\'" />' \
-                       '        <title>{1}</title>' \
-                       '    </head>' \
-                       '    <body>' \
-                       '        <h1><a href="{0}">{1}</a></h1>' \
-                       '   </body>' \
-                       '</html>'.format(project_json['commits'][(len(project_json['commits'])-1)]['id'], repo_name)
-                repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
-                write_file(repo_index_file, html)
-                self.door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
-            except Exception as e:
-                print("FAILED: {0}".format(e.message))
-            finally:
-                print('finished.')
+            # # Download the project.json and generate repo's index.html page
+            # try:
+            #     project_json_key = 'u/{0}/{1}/project.json'.format(user, repo_name)
+            #     print("Getting {0}...".format(project_json_key))
+            #     project_json = self.cdn_handler.get_json(project_json_key)
+            #
+            #     html = '<html>' \
+            #            '    <head>' \
+            #            '        <meta http-equiv="refresh" content="0; URL=\'{0}\'" />' \
+            #            '        <title>{1}</title>' \
+            #            '    </head>' \
+            #            '    <body>' \
+            #            '        <h1><a href="{0}">{1}</a></h1>' \
+            #            '   </body>' \
+            #            '</html>'.format(project_json['commits'][(len(project_json['commits'])-1)]['id'], repo_name)
+            #     repo_index_file = os.path.join(tempfile.gettempdir(), 'index.html')
+            #     write_file(repo_index_file, html)
+            #     #self.door43_handler.upload_file(repo_index_file, s3_repo_key + '/index.html', 0)
+            # except Exception as e:
+            #     print("FAILED: {0}".format(e.message))
+            # finally:
+            #     print('finished.')
+            self.door43_handler.redirect(s3_repo_key, '/' + s3_commit_key)
+            self.door43_handler.redirect(s3_repo_key + '/index.html', '/' + s3_commit_key)
 
         except Exception:
             pass
@@ -170,7 +197,6 @@ def handle(event, context):
                     print('.html')
                     success = Door43Deployer(cdn_bucket, door43_bucket).redeploy_all_commits()
                 elif key.endswith('build_log.json'):
-                    print('.json')
                     success = Door43Deployer(cdn_bucket, door43_bucket).deploy_commit_to_door43(key)
 
     return {
