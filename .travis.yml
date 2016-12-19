@@ -12,8 +12,7 @@ install:
 - bash install-requirements.sh
 - pip install coveralls
 script: 
-- ls -l .
-# - coverage run --source=obs test-setup.py test
+- coverage run --source=obs test-setup.py test
 after_success:
 - coveralls
 deploy:
