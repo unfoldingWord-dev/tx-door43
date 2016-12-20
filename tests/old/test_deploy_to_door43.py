@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from functions.deploy.main import deploy_to_door43
 
-class TestDeploy_to_door43(TestCase):
+class TestDeployToDoor43(TestCase):
     def test_deploy_to_door43(self):
         deploy_to_door43({
             "input_format": "md",
