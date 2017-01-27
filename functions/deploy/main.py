@@ -29,6 +29,11 @@ class Door43Deployer(object):
         self.cdn_handler = S3Handler(cdn_bucket)
         self.door43_handler = S3Handler(door43_bucket)
 
+        # keep track of temp folders for easier cleanup
+        self.source_dir = None
+        self.output_dir = None
+        self.template_dir = None
+
     def deploy_commit_to_door43(self, build_log_key):
         build_log = None
         try:
@@ -51,6 +56,11 @@ class Door43Deployer(object):
         source_dir = tempfile.mkdtemp(prefix='source_')
         output_dir = tempfile.mkdtemp(prefix='output_')
         template_dir = tempfile.mkdtemp(prefix='template_')
+
+        # keep track of temp folders for easier cleanup
+        self.source_dir = source_dir
+        self.output_dir = output_dir
+        self.template_dir = template_dir
 
         self.cdn_handler.download_dir(s3_commit_key, source_dir)
         source_dir = os.path.join(source_dir, s3_commit_key)
