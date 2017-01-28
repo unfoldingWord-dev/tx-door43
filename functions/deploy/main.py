@@ -26,8 +26,9 @@ class Door43Deployer(object):
     def __init__(self, cdn_bucket, door43_bucket):
         self.cdn_bucket = cdn_bucket
         self.door43_bucket = door43_bucket
-        self.cdn_handler = S3Handler(cdn_bucket)
-        self.door43_handler = S3Handler(door43_bucket)
+
+        self.cdn_handler = S3Handler(cdn_bucket) if cdn_bucket else None
+        self.door43_handler = S3Handler(door43_bucket) if door43_bucket else None
 
         # keep track of temp folders for easier cleanup
         self.source_dir = None
