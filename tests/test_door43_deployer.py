@@ -36,7 +36,7 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43Complete(self):
         # given
-        test_folder_name = "aab_obs_text_obs-complete"
+        test_folder_name = "aab_obs_text_obs"
         expect_success = True
 
         # when
@@ -46,11 +46,11 @@ class TestDoor43Deployer(unittest.TestCase):
         self.verifyDeploy(success, expect_success, deployer.output_dir)
 
 
-    def testCommitToDoor43Empty(self):
+    def testCommitToDoor43MissingChapter01(self):
         # given
-        test_folder_name = "aae_obs_text_obs-empty"
+        test_folder_name = "aai_obs_text_obs-missing_chapter_01"
         expect_success = True
-        missing_chapters = range(1, 51)
+        missing_chapters = [1]
 
         # when
         deployer, success = self.doCommitToDoor43(test_folder_name)
@@ -59,9 +59,9 @@ class TestDoor43Deployer(unittest.TestCase):
         self.verifyDeploy(success, expect_success, deployer.output_dir, missing_chapters)
 
 
-    def testCommitToDoor43MissingFirstFrame(self):
+    def testCommitToDoor43Complete_OldConverte(self):
         # given
-        test_folder_name = "aah_obs_text_obs-missing_first_frame"
+        test_folder_name = "aab_obs_text_obs-complete_old"
         expect_success = True
 
         # when
@@ -71,17 +71,42 @@ class TestDoor43Deployer(unittest.TestCase):
         self.verifyDeploy(success, expect_success, deployer.output_dir)
 
 
-    def testCommitToDoor43MissingChapter50(self):
+    def testCommitToDoor43Empty_OldConverte(self):
         # given
-        test_folder_name = "aai_obs_text_obs-missing_chapter_50"
+        test_folder_name = "aae_obs_text_obs-empty_old"
         expect_success = True
-        missing_chapters = [50]
+        # missing_chapters = range(1, 51) # old converter would generate missing chapters, but error message put in output file
 
         # when
         deployer, success = self.doCommitToDoor43(test_folder_name)
 
         # then
-        self.verifyDeploy(success, expect_success, deployer.output_dir, missing_chapters)
+        self.verifyDeploy(success, expect_success, deployer.output_dir)
+
+
+    def testCommitToDoor43MissingFirstFrame_OldConverte(self):
+        # given
+        test_folder_name = "aah_obs_text_obs-missing_first_frame_old"
+        expect_success = True
+
+        # when
+        deployer, success = self.doCommitToDoor43(test_folder_name)
+
+        # then
+        self.verifyDeploy(success, expect_success, deployer.output_dir)
+
+
+    def testCommitToDoor43MissingChapter50_OldConverter(self):
+        # given
+        test_folder_name = "aai_obs_text_obs-missing_chapter_50_old"
+        expect_success = True
+        # missing_chapters = [50] # old converter would generate missing chapters, but error message put in output file
+
+        # when
+        deployer, success = self.doCommitToDoor43(test_folder_name)
+
+        # then
+        self.verifyDeploy(success, expect_success, deployer.output_dir)
 
 
     # empty
@@ -117,7 +142,10 @@ class TestDoor43Deployer(unittest.TestCase):
         files_missing = []
         for i in range(1, 51):
             file_name = str(i).zfill(2) + '.html'
-            files_to_verify.append(file_name)
+            if not i in missing_chapters:
+                files_to_verify.append(file_name)
+            else:
+                files_missing.append(file_name)
 
         files_to_verify.append("index.html")
         files_to_verify.append("build_log.json")
