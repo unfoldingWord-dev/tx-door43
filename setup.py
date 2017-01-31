@@ -20,10 +20,13 @@ setup(
     url="https://github.org/unfoldingWord-dev/tx-door43",
     long_description=read('README.md'),
     classifiers=[],
+    dependency_links=[
+        'git+git://github.com/unfoldingWord-dev/tx-manager.git@develop#egg=tx-manager',
+    ],
     install_requires=[
         'bs4',
         'requests',
-        'tx-shared-tools'
+        'tx-manager'
     ],
     test_suite='tests',
 )
