@@ -204,24 +204,27 @@ class TestDoor43Deployer(unittest.TestCase):
 
     ### used to load test data files:
 
-    # def testCopy(self):
-    #     user = "photonomad0"
-    #     # repo = "aab_obs_text_obs"
-    #     # commit = "501f51ba4a"
-    #     repo = "aai_obs_text_obs"
-    #     commit = "e3f76d2731"
-    #     bucket = "https://cdn.door43.org"
-    #
-    #     self.temp_dir = tempfile.mkdtemp(prefix='downloads_')
-    #     destinationFolder = self.temp_dir
-    #
-    #     error, file_names, destinationPaths = self.copyConvertedObsUrlsFromFile(bucket, commit, destinationFolder, repo, user)
-    #
-    #     self.assertFalse(error)
-    #     self.assertTrue(os.path.isdir(self.temp_dir))
-    #
-    #     for file_name in file_names:
-    #         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, file_name)))
+# def testACopy(self):
+#     user = "photonomad0"
+#     # repo = "aab_obs_text_obs"
+#     # commit = "501f51ba4a"
+#     # repo = "aai_obs_text_obs"
+#     # commit = "e3f76d2731"
+#     repo = "aah_obs_text_obs"
+#     commit = "f1fdbae5b7"
+#     bucket = "https://cdn.door43.org"
+#
+#     self.temp_dir = tempfile.mkdtemp(prefix='downloads_')
+#     destinationFolder = self.temp_dir
+#
+#     error, file_names, destinationPaths = self.copyConvertedObsUrlsFromFile(bucket, commit, destinationFolder, repo, user)
+#
+#     self.assertFalse(error)
+#     self.assertTrue(os.path.isdir(self.temp_dir))
+#
+#     for file_name in file_names:
+#         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, file_name)))
+
 
     def copyConvertedObsUrlsFromFile(self, bucket, commit, destinationFolder, repo, user):
         source = "%s/u/%s/%s/%s" % (bucket, user, repo, commit)
