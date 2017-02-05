@@ -6,10 +6,12 @@ import tempfile
 import urllib
 
 import shutil
+import zipfile
 from glob import glob
 
 from bs4 import BeautifulSoup
 from general_tools import file_utils
+from general_tools.file_utils import unzip
 
 from functions.deploy import Door43Deployer
 
@@ -22,6 +24,7 @@ class TestDoor43Deployer(unittest.TestCase):
         self.cdn_file = "cdn_file"
         self.out_dir = ''
         self.temp_dir = ''
+        self.temp_dir2 = ''
         self.sources_dir = ''
 
     def tearDown(self):
@@ -33,16 +36,19 @@ class TestDoor43Deployer(unittest.TestCase):
             shutil.rmtree(self.out_dir, ignore_errors=True)
         if os.path.isdir(self.temp_dir):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
+        if os.path.isdir(self.temp_dir2):
+            shutil.rmtree(self.temp_dir2, ignore_errors=True)
         if os.path.isdir(self.sources_dir):
             shutil.rmtree(self.sources_dir, ignore_errors=True)
 
     def testCommitToDoor43Complete(self):
         # given
-        test_folder_name = "aab_obs_text_obs"
+        test_folder_name = "aab_obs_text_obs.zip"
         expect_success = True
+        test_file_path = self.extractZipFiles(test_folder_name)
 
-        # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+    # when
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer)
@@ -50,12 +56,13 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43MissingChapter01(self):
         # given
-        test_folder_name = "aai_obs_text_obs-missing_chapter_01"
+        test_folder_name = "aai_obs_text_obs-missing_chapter_01.zip"
         expect_success = True
         missing_chapters = [1]
+        test_file_path = self.extractZipFiles(test_folder_name)
 
         # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer, missing_chapters)
@@ -63,11 +70,12 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43Complete_OldConverter(self):
         # given
-        test_folder_name = "aab_obs_text_obs-complete_old"
+        test_folder_name = "aab_obs_text_obs-complete_old.zip"
         expect_success = True
+        test_file_path = self.extractZipFiles(test_folder_name)
 
         # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer)
@@ -75,12 +83,13 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43Empty_OldConverter(self):
         # given
-        test_folder_name = "aae_obs_text_obs-empty_old"
+        test_folder_name = "aae_obs_text_obs-empty_old.zip"
         expect_success = True
         missing_chapters = range(1, 51)
+        test_file_path = self.extractZipFiles(test_folder_name)
 
         # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer, missing_chapters)
@@ -88,11 +97,12 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43MissingFirstFrame_OldConverter(self):
         # given
-        test_folder_name = "aah_obs_text_obs-missing_first_frame_old"
+        test_folder_name = "aah_obs_text_obs-missing_first_frame_old.zip"
         expect_success = True
+        test_file_path = self.extractZipFiles(test_folder_name)
 
         # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer)
@@ -100,12 +110,13 @@ class TestDoor43Deployer(unittest.TestCase):
 
     def testCommitToDoor43MissingChapter50_OldConverter(self):
         # given
-        test_folder_name = "aai_obs_text_obs-missing_chapter_50_old"
+        test_folder_name = "aai_obs_text_obs-missing_chapter_50_old.zip"
         expect_success = True
         missing_chapters = [50]
+        test_file_path = self.extractZipFiles(test_folder_name)
 
         # when
-        deployer, success = self.doCommitToDoor43(test_folder_name)
+        deployer, success = self.doCommitToDoor43(test_file_path)
 
         # then
         self.verifyDoor43Deploy(success, expect_success, deployer, missing_chapters)
@@ -117,7 +128,7 @@ class TestDoor43Deployer(unittest.TestCase):
     # <div class="col-md-3 sidebar" id="left-sidebar" role="complementary"><span><select id="page-nav" onchange="window.location.href=this.value"><option value="01.html">01</option><option value="02.html">02</option><option value="03.html">03</option><option value="04.html">04</option><option value="05.html">05</option><option value="06.html">06</option><option value="07.html">07</option><option value="08.html">08</option><option value="09.html">09</option><option value="10.html">10</option><option value="11.html">11</option><option value="12.html">12</option><option value="13.html">13</option><option value="14.html">14</option><option value="15.html">15</option><option value="16.html">16</option><option value="17.html">17</option><option value="18.html">18</option><option value="19.html">19</option><option value="20.html">20</option><option value="21.html">21</option><option value="22.html">22</option><option value="23.html">23</option><option value="24.html">24</option><option value="25.html">25</option><option value="26.html">26</option><option value="27.html">27</option><option value="28.html">28</option><option value="29.html">29</option><option value="30.html">30</option><option value="31.html">31</option><option value="32.html">32</option><option value="33.html">33</option><option value="34.html">34</option><option value="35.html">35</option><option value="36.html">36</option><option value="37.html">37</option><option value="38.html">38</option><option value="39.html">39</option><option value="40.html">40</option><option value="41.html">41</option><option value="42.html">42</option><option value="43.html">43</option><option value="44.html">44</option><option value="45.html">45</option><option value="46.html">46</option><option value="47.html">47</option><option value="48.html">48</option><option value="49.html">49</option><option value="all.html">all</option><option value="front.html">front</option><option value="hide.50.html">hide.50</option></select><div><h1>Revisions</h1><table id="revisions" width="100%"></table></div></span></div>
 
     def doCommitToDoor43(self, test_folder_name):
-        self.source_dir = os.path.join(self.resources_dir, "converted", test_folder_name, "commit")
+        self.source_dir = os.path.join(self.resources_dir, "converted_obs", test_folder_name, "commit")
         success = True
         deployer = Door43Deployer(None, None)
         # add mocking for testing
@@ -201,8 +212,14 @@ class TestDoor43Deployer(unittest.TestCase):
 
         return content
 
+    def extractZipFiles(self, test_folder_name):
+        file_path = os.path.join(self.resources_dir, "converted_obs", test_folder_name)
+        self.temp_dir2 = tempfile.mkdtemp(prefix='repo_')
+        unzip(file_path, self.temp_dir2)
+        return self.temp_dir2
 
-    ### used to load test data files:
+
+        ### used to load test data files:
 
 # def testACopy(self):
 #     user = "photonomad0"
@@ -224,6 +241,46 @@ class TestDoor43Deployer(unittest.TestCase):
 #
 #     for file_name in file_names:
 #         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, file_name)))
+
+
+    # def test_PackageResource(self):
+    #
+    #     #given
+    #     resource = 'converted'
+    #     repo_name = 'aai_obs_text_obs-missing_chapter_50_old'
+    #
+    #     # when
+    #     zip_file = self.packageResource(resource, repo_name)
+    #
+    #     #then
+    #     print(zip_file)
+
+
+    def packageResource(self, resource, repo_name):
+        source_folder = os.path.join(self.resources_dir, resource, repo_name)
+        self.temp_dir = tempfile.mkdtemp(prefix='repo_')
+        zip_filepath = self.createZipFile(repo_name + ".zip", self.temp_dir, source_folder)
+        return zip_filepath
+
+    @classmethod
+    def createZipFile(cls, zip_filename, destination_folder, source_folder):
+        zip_filepath = os.path.join(destination_folder, zip_filename)
+        cls. add_contents_to_zip(zip_filepath, source_folder)
+        return zip_filepath
+
+    @classmethod
+    def add_contents_to_zip(cls, zip_file, path):
+        """
+        Zip the contents of <path> into <zip_file>.
+        :param str|unicode zip_file: The file name of the zip file
+        :param str|unicode path: Full path of the directory to zip up
+        """
+        path = path.rstrip(os.sep)
+        with zipfile.ZipFile(zip_file, 'a') as zf:
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    zf.write(file_path, file_path[len(path)+1:])
 
 
     def copyConvertedObsUrlsFromFile(self, bucket, commit, destinationFolder, repo, user):
